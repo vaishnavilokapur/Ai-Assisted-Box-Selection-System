@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}Packaging Boxes – PackWise{% endblock %}
+
+{% block content %}
+<div class="page-header flex-between">
+    <div>
+        <div class="breadcrumb"><a href="/">Dashboard</a> / Boxes</div>
+        <h1 class="page-title">Packaging Box Inventory</h1>
+        <p class="page-subtitle">Standard container inventory available for automated 3D order packing.</p>
+    </div>
+    <div>
+        <a href="{% url 'box_create' %}" class="btn btn-primary">+ Add New Box</a>
+    </div>
+</div>
+
+{% if messages %}
+    <div class="messages-container">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }}">
+                <span class="alert-icon">ℹ️</span>
+                <span>{{ message }}</span>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+{% if not boxes %}
+    <div class="empty-state-card">
+        <div class="empty-icon">📦</div>
+        <h2>No Packaging Boxes Found</h2>
+        <p>No standard box sizes have been configured. Add packaging boxes to enable box recommendations.</p>
+        <a href="{% url 'box_create' %}" class="btn btn-primary mt-3">+ Add First Box</a>
+    </div>
+{% else %}
+    <div class="card">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Box Name</th>
+                        <th>Internal Length (cm)</th>
+                        <th>Internal Width (cm)</th>
+                        <th>Internal Height (cm)</th>
+                        <th>Volume (cm³)</th>
+                        <th>Max Weight Capacity</th>
+                        <th>Cost (₹)</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in boxes %}
+                        <tr>
+                            <td><strong>{{ b.name }}</strong></td>
+                            <td>{{ b.length }}</td>
+                            <td>{{ b.width }}</td>
+                            <td>{{ b.height }}</td>
+                            <td>
+                                {{ b.length|floatformat:2 }} × {{ b.width|floatformat:2 }} × {{ b.height|floatformat:2 }}
+                            </td>
+                            <td><span class="badge badge-qty">{{ b.max_weight }} kg</span></td>
+                            <td><strong class="text-navy">₹{{ b.cost }}</strong></td>
+                            <td>
+                                <div class="action-buttons-group">
+                                    <a href="{% url 'box_update' b.pk %}" class="btn btn-outline btn-sm">Edit</a>
+                                    <a href="{% url 'box_delete' b.pk %}" class="btn btn-outline-danger btn-sm">Delete</a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
+

@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} – PackWise{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="breadcrumb"><a href="/">Dashboard</a> / <a href="{% url 'box_list' %}">Boxes</a> / Form</div>
+    <h1 class="page-title">{{ title }}</h1>
+    <p class="page-subtitle">Configure internal container dimensions, payload limit, and unit cost.</p>
+</div>
+
+{% if form.errors %}
+    <div class="alert alert-error">
+        <span class="alert-icon">⚠️</span>
+        <div>
+            <p><strong>Please correct the following errors:</strong></p>
+            {% for field in form %}
+                {% for error in field.errors %}
+                    <p>• {{ field.label }}: {{ error }}</p>
+                {% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+                <p>• {{ error }}</p>
+            {% endfor %}
+        </div>
+    </div>
+{% endif %}
+
+<div class="card form-container-narrow">
+    <form method="POST" novalidate>
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="id_name" class="form-label">Box Name <span class="required">*</span></label>
+            {{ form.name }}
+            {% if form.name.help_text %}
+                <small class="form-hint">{{ form.name.help_text }}</small>
+            {% endif %}
+        </div>
+
+        <div class="grid-3">
+            <div class="form-group">
+                <label for="id_length" class="form-label">Internal Length (cm) <span class="required">*</span></label>
+                {{ form.length }}
+                <small class="form-hint">Internal Length (> 0)</small>
+            </div>
+            <div class="form-group">
+                <label for="id_width" class="form-label">Internal Width (cm) <span class="required">*</span></label>
+                {{ form.width }}
+                <small class="form-hint">Internal Width (> 0)</small>
+            </div>
+            <div class="form-group">
+                <label for="id_height" class="form-label">Internal Height (cm) <span class="required">*</span></label>
+                {{ form.height }}
+                <small class="form-hint">Internal Height (> 0)</small>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="form-group">
+                <label for="id_max_weight" class="form-label">Maximum Weight (kg) <span class="required">*</span></label>
+                {{ form.max_weight }}
+                <small class="form-hint">Maximum payload capacity (> 0)</small>
+            </div>
+            <div class="form-group">
+                <label for="id_cost" class="form-label">Unit Cost (₹ INR) <span class="required">*</span></label>
+                {{ form.cost }}
+                <small class="form-hint">Cost in Indian Rupees (> 0)</small>
+            </div>
+        </div>
+
+        <div class="form-actions mt-4">
+            <button type="submit" class="btn btn-primary btn-lg">
+                💾 {{ button_text }}
+            </button>
+            <a href="{% url 'box_list' %}" class="btn btn-outline">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

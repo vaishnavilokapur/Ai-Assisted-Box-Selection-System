@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Products Catalog – PackWise{% endblock %}
+
+{% block content %}
+<div class="page-header flex-between">
+    <div>
+        <div class="breadcrumb"><a href="/">Dashboard</a> / Products</div>
+        <h1 class="page-title">Product Catalog</h1>
+        <p class="page-subtitle">Manage products with their 3D dimensional specifications and weights.</p>
+    </div>
+    <div>
+        <a href="{% url 'product_create' %}" class="btn btn-primary">+ Add New Product</a>
+    </div>
+</div>
+
+{% if messages %}
+    <div class="messages-container">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }}">
+                <span class="alert-icon">ℹ️</span>
+                <span>{{ message }}</span>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+{% if not products %}
+    <div class="empty-state-card">
+        <div class="empty-icon">🏷️</div>
+        <h2>No Products Found</h2>
+        <p>Your catalog is currently empty. Add products to begin packing orders.</p>
+        <a href="{% url 'product_create' %}" class="btn btn-primary mt-3">+ Add First Product</a>
+    </div>
+{% else %}
+    <div class="card">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Product Name</th>
+                        <th>Length (cm)</th>
+                        <th>Width (cm)</th>
+                        <th>Height (cm)</th>
+                        <th>Volume (cm³)</th>
+                        <th>Weight (kg)</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in products %}
+                        <tr>
+                            <td><strong>{{ p.name }}</strong></td>
+                            <td>{{ p.length }}</td>
+                            <td>{{ p.width }}</td>
+                            <td>{{ p.height }}</td>
+                            <td>
+                                {% widthratio p.length 1 1 as l %}
+                                {{ p.length|floatformat:2 }} × {{ p.width|floatformat:2 }} × {{ p.height|floatformat:2 }}
+                            </td>
+                            <td><span class="badge badge-qty">{{ p.weight }} kg</span></td>
+                            <td>
+                                <div class="action-buttons-group">
+                                    <a href="{% url 'product_update' p.pk %}" class="btn btn-outline btn-sm">Edit</a>
+                                    <a href="{% url 'product_delete' p.pk %}" class="btn btn-outline-danger btn-sm">Delete</a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
+

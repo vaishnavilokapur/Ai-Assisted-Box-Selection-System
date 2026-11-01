@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} – PackWise{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="breadcrumb"><a href="/">Dashboard</a> / <a href="{% url 'product_list' %}">Products</a> / Form</div>
+    <h1 class="page-title">{{ title }}</h1>
+    <p class="page-subtitle">Configure exact physical metrics in centimeters (cm) and kilograms (kg).</p>
+</div>
+
+{% if form.errors %}
+    <div class="alert alert-error">
+        <span class="alert-icon">⚠️</span>
+        <div>
+            <p><strong>Please correct the following errors:</strong></p>
+            {% for field in form %}
+                {% for error in field.errors %}
+                    <p>• {{ field.label }}: {{ error }}</p>
+                {% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+                <p>• {{ error }}</p>
+            {% endfor %}
+        </div>
+    </div>
+{% endif %}
+
+<div class="card form-container-narrow">
+    <form method="POST" novalidate>
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="id_name" class="form-label">Product Name <span class="required">*</span></label>
+            {{ form.name }}
+            {% if form.name.help_text %}
+                <small class="form-hint">{{ form.name.help_text }}</small>
+            {% endif %}
+        </div>
+
+        <div class="grid-2">
+            <div class="form-group">
+                <label for="id_length" class="form-label">Length (cm) <span class="required">*</span></label>
+                {{ form.length }}
+                <small class="form-hint">Physical length in cm (> 0)</small>
+            </div>
+            <div class="form-group">
+                <label for="id_width" class="form-label">Width (cm) <span class="required">*</span></label>
+                {{ form.width }}
+                <small class="form-hint">Physical width in cm (> 0)</small>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="form-group">
+                <label for="id_height" class="form-label">Height (cm) <span class="required">*</span></label>
+                {{ form.height }}
+                <small class="form-hint">Physical height in cm (> 0)</small>
+            </div>
+            <div class="form-group">
+                <label for="id_weight" class="form-label">Weight (kg) <span class="required">*</span></label>
+                {{ form.weight }}
+                <small class="form-hint">Weight in kilograms (> 0)</small>
+            </div>
+        </div>
+
+        <div class="form-actions mt-4">
+            <button type="submit" class="btn btn-primary btn-lg">
+                💾 {{ button_text }}
+            </button>
+            <a href="{% url 'product_list' %}" class="btn btn-outline">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Order – PackWise{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="breadcrumb"><a href="/">Dashboard</a> / <a href="{% url 'order_list' %}">Orders</a> / Create</div>
+    <h1 class="page-title">Create Packaging Order</h1>
+    <p class="page-subtitle">Configure order details and select products to compute the optimal 3D packaging recommendation.</p>
+</div>
+
+{% if messages %}
+    <div class="messages-container">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'error' }}">
+                <span class="alert-icon">⚠️</span>
+                <span>{{ message }}</span>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+{% if form.errors %}
+    <div class="alert alert-error">
+        <span class="alert-icon">⚠️</span>
+        <div>
+            {% for field in form %}
+                {% for error in field.errors %}
+                    <p><strong>{{ field.label }}:</strong> {{ error }}</p>
+                {% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+    </div>
+{% endif %}
+
+{% if not products %}
+    <div class="empty-state-card">
+        <div class="empty-icon">📦</div>
+        <h2>No Products Found in Catalog</h2>
+        <p>Please add products in the catalog before creating an order.</p>
+        <a href="/admin/products/product/add/" class="btn btn-primary" target="_blank">Add Product in Admin</a>
+    </div>
+{% else %}
+    <form method="POST" action="{% url 'order_create' %}" class="order-form-container" id="orderForm">
+        {% csrf_token %}
+
+        <!-- Order Details Card -->
+        <div class="card form-section">
+            <h2 class="section-title">
+                <span class="step-num">1</span> Order Identification
+            </h2>
+            <div class="form-group">
+                <label for="id_order_number" class="form-label">Order Number <span class="required">*</span></label>
+                {{ form.order_number }}
+                <small class="form-hint">Enter a unique identifier (e.g., ORD-2026-101, PKG-9942).</small>
+            </div>
+        </div>
+
+        <!-- Product Selection Card -->
+        <div class="card form-section">
+            <div class="section-header-flex">
+                <h2 class="section-title">
+                    <span class="step-num">2</span> Product Selection &amp; Quantities
+                </h2>
+                <button type="button" class="btn btn-secondary btn-sm" id="addProductRowBtn">
+                    + Add Another Product
+                </button>
+            </div>
+            <p class="form-hint mb-3">Select the products and their respective quantities for this packaging shipment.</p>
+
+            <div id="productRowsContainer" class="product-rows-container">
+                <!-- Dynamic Item Rows -->
+                <div class="product-row" data-row-index="0">
+                    <div class="form-group flex-2">
+                        <label class="form-label">Product <span class="required">*</span></label>
+                        <select name="product_id" class="form-control product-select" required onchange="updateProductSpecs(this)">
+                            <option value="">-- Select Product --</option>
+                            {% for p in products %}
+                                <option value="{{ p.id }}"
+                                        data-dims="{{ p.length }}x{{ p.width }}x{{ p.height }} cm"
+                                        data-weight="{{ p.weight }} kg">
+                                    {{ p.name }} ({{ p.length }}x{{ p.width }}x{{ p.height }} cm, {{ p.weight }} kg)
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <div class="specs-badge" style="display: none;"></div>
+                    </div>
+
+                    <div class="form-group flex-1">
+                        <label class="form-label">Quantity <span class="required">*</span></label>
+                        <input type="number" name="quantity" class="form-control qty-input" value="1" min="1" required>
+                    </div>
+
+                    <div class="form-group row-action">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="button" class="btn-remove-row" onclick="removeProductRow(this)" title="Remove item">
+                            &times;
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Available Boxes Status -->
+        <div class="system-status-note">
+            <span>📦 Packaging Inventory: <strong>{{ boxes_count }} box type(s)</strong> configured in the system.</span>
+            {% if boxes_count == 0 %}
+                <span class="text-danger"> (Warning: No boxes configured yet. Add boxes in Admin to receive recommendations.)</span>
+            {% endif %}
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-lg">
+                🚀 Submit Order &amp; Get Box Recommendation
+            </button>
+            <a href="{% url 'order_list' %}" class="btn btn-outline">Cancel</a>
+        </div>
+    </form>
+{% endif %}
+
+<script>
+    // Dynamic product row manager
+    document.addEventListener('DOMContentLoaded', () => {
+        const addBtn = document.getElementById('addProductRowBtn');
+        const container = document.getElementById('productRowsContainer');
+
+        if (addBtn && container) {
+            addBtn.addEventListener('click', () => {
+                const firstRow = container.querySelector('.product-row');
+                if (!firstRow) return;
+
+                const clone = firstRow.cloneNode(true);
+                const select = clone.querySelector('select');
+                const qtyInput = clone.querySelector('input[type="number"]');
+                const specsBadge = clone.querySelector('.specs-badge');
+
+                select.selectedIndex = 0;
+                qtyInput.value = 1;
+                specsBadge.style.display = 'none';
+                specsBadge.textContent = '';
+
+                container.appendChild(clone);
+            });
+        }
+    });
+
+    function updateProductSpecs(selectElem) {
+        const row = selectElem.closest('.product-row');
+        const badge = row.querySelector('.specs-badge');
+        const selectedOption = selectElem.options[selectElem.selectedIndex];
+
+        if (selectedOption && selectedOption.value) {
+            const dims = selectedOption.getAttribute('data-dims');
+            const weight = selectedOption.getAttribute('data-weight');
+            badge.textContent = `Dimensions: ${dims} | Weight: ${weight}`;
+            badge.style.display = 'inline-block';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    function removeProductRow(btnElem) {
+        const container = document.getElementById('productRowsContainer');
+        const rows = container.querySelectorAll('.product-row');
+        if (rows.length > 1) {
+            btnElem.closest('.product-row').remove();
+        } else {
+            alert('At least one product row must be maintained in the order.');
+        }
+    }
+</script>
+{% endblock %}
+

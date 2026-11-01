@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+
+{% block title %}Box Recommendation – Order #{{ order.order_number }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="breadcrumb"><a href="/">Dashboard</a> / <a href="{% url 'order_list' %}">Orders</a> / Recommendation</div>
+    <div class="header-with-badge">
+        <h1 class="page-title">Box Recommendation Result</h1>
+        {% if success %}
+            <span class="badge badge-success">✓ Optimal Match Found</span>
+        {% else %}
+            <span class="badge badge-danger">✕ No Suitable Box</span>
+        {% endif %}
+    </div>
+    <p class="page-subtitle">3D Bin-packing recommendation results for Order <strong>#{{ order.order_number }}</strong>.</p>
+</div>
+
+<!-- Primary Result Banner -->
+<div class="card result-banner {% if success %}result-banner-success{% else %}result-banner-danger{% endif %}">
+    <div class="result-banner-icon">
+        {% if success %}📦{% else %}⚠️{% endif %}
+    </div>
+    <div class="result-banner-content">
+        <h2 class="result-headline">
+            {% if success %}
+                Recommended Box: <span class="highlight-box-name">{{ box.name }}</span>
+            {% else %}
+                Packaging Failure
+            {% endif %}
+        </h2>
+        <p class="result-description">{{ message }}</p>
+    </div>
+</div>
+
+<div class="results-grid">
+    <!-- Left Column: Recommended Box Specifications or Failure Details -->
+    <div class="results-col-primary">
+        {% if success and box %}
+            <div class="card spec-card">
+                <div class="card-header-styled">
+                    <h3 class="card-subtitle-small">Recommended Container</h3>
+                    <h2 class="card-title-lg">{{ box.name }}</h2>
+                </div>
+
+                <div class="spec-metrics-grid">
+                    <div class="spec-metric-item">
+                        <span class="spec-label">Internal Dimensions</span>
+                        <span class="spec-value">{{ box.length }} × {{ box.width }} × {{ box.height }} cm</span>
+                        <span class="spec-sub">L × W × H</span>
+                    </div>
+
+                    <div class="spec-metric-item">
+                        <span class="spec-label">Container Volume</span>
+                        <span class="spec-value">
+                            {% widthratio box.length 1 1 as l %}
+                            {{ box.length|floatformat:2 }} × {{ box.width|floatformat:2 }} × {{ box.height|floatformat:2 }}
+                        </span>
+                        <span class="spec-sub">Standard internal capacity</span>
+                    </div>
+
+                    <div class="spec-metric-item">
+                        <span class="spec-label">Max Weight Capacity</span>
+                        <span class="spec-value text-teal">{{ box.max_weight }} kg</span>
+                        <span class="spec-sub">Payload allowance</span>
+                    </div>
+
+                    <div class="spec-metric-item">
+                        <span class="spec-label">Packaging Cost</span>
+                        <span class="spec-value text-navy">₹{{ box.cost }}</span>
+                        <span class="spec-sub">Indian Rupees (INR)</span>
+                    </div>
+                </div>
+
+                <!-- 3D Placement Coordinates -->
+                {% if placements %}
+                    <div class="mt-4">
+                        <h4 class="subheading-styled">3D Coordinates &amp; Orientation</h4>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Position (X, Y, Z)</th>
+                                        <th>Oriented (dx, dy, dz)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for p in placements %}
+                                        <tr>
+                                            <td><strong>{{ p.product_name }}</strong></td>
+                                            <td><code>({{ p.position.0|floatformat:1 }}, {{ p.position.1|floatformat:1 }}, {{ p.position.2|floatformat:1 }}) cm</code></td>
+                                            <td><span class="badge badge-neutral">{{ p.dimensions.0|floatformat:1 }} × {{ p.dimensions.1|floatformat:1 }} × {{ p.dimensions.2|floatformat:1 }} cm</span></td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="card failure-card">
+                <h3 class="card-title text-danger">Packaging Incompatibility Details</h3>
+                <p class="text-muted mt-2">
+                    None of the available standard boxes could satisfy the physical boundary constraints or weight capacity for this order.
+                </p>
+                <div class="alert alert-warning mt-3">
+                    <strong>Explanation:</strong> {{ message }}
+                </div>
+                <div class="mt-4">
+                    <h4 class="subheading-styled">Suggested Next Steps:</h4>
+                    <ul class="styled-list">
+                        <li>Split the order into two separate shipments.</li>
+                        <li>Configure a larger box in the <a href="/admin/boxes/box/add/" target="_blank">packaging catalog</a>.</li>
+                        <li>Verify the dimensional specifications of products in this order.</li>
+                    </ul>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Selected Products & Quantities Breakdown Table -->
+        <div class="card mt-4">
+            <h3 class="card-title">Order Items Breakdown</h3>
+            <p class="form-hint mb-3">Products and quantities included in Order #{{ order.order_number }}:</p>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Product Name</th>
+                            <th>Dimensions (L × W × H)</th>
+                            <th>Unit Wt.</th>
+                            <th>Qty</th>
+                            <th>Total Wt.</th>
+                            <th>Total Vol.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items_breakdown %}
+                            <tr>
+                                <td><strong>{{ item.name }}</strong></td>
+                                <td>{{ item.dimensions }}</td>
+                                <td>{{ item.unit_weight }} kg</td>
+                                <td><span class="badge badge-qty">{{ item.quantity }}</span></td>
+                                <td><strong>{{ item.total_weight|floatformat:2 }} kg</strong></td>
+                                <td>{{ item.total_volume|floatformat:2 }} cm³</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Order Overview Summary Cards -->
+    <div class="results-col-secondary">
+        <div class="card summary-card">
+            <h3 class="card-title">Order Summary</h3>
+            <div class="summary-list">
+                <div class="summary-row">
+                    <span class="summary-key">Order Number:</span>
+                    <span class="summary-val font-mono">#{{ order.order_number }}</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-key">Created Timestamp:</span>
+                    <span class="summary-val">{{ order.created_at|date:"M d, Y H:i" }}</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-key">Total Product Count:</span>
+                    <span class="summary-val">{{ total_quantity }} item(s)</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-key">Total Order Weight:</span>
+                    <span class="summary-val highlight-val">{{ total_weight|floatformat:2 }} kg</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-key">Total Order Volume:</span>
+                    <span class="summary-val highlight-val">{{ total_volume|floatformat:2 }} cm³</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-key">Status:</span>
+                    <span class="summary-val">
+                        {% if success %}
+                            <span class="badge badge-success">Packed</span>
+                        {% else %}
+                            <span class="badge badge-danger">Unpacked</span>
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <div class="mt-4 summary-actions">
+                <a href="{% url 'order_create' %}" class="btn btn-primary btn-block">
+                    + Create Another Order
+                </a>
+                <a href="{% url 'order_list' %}" class="btn btn-outline btn-block mt-2">
+                    📋 View All Orders
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

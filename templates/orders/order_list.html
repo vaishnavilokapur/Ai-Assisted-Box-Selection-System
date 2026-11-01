@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Orders – PackWise{% endblock %}
+
+{% block content %}
+<div class="page-header flex-between">
+    <div>
+        <div class="breadcrumb"><a href="/">Dashboard</a> / Orders</div>
+        <h1 class="page-title">Packaging Orders</h1>
+        <p class="page-subtitle">History of processed orders and calculated box packaging selections.</p>
+    </div>
+    <div>
+        <a href="{% url 'order_create' %}" class="btn btn-primary">+ Create New Order</a>
+    </div>
+</div>
+
+{% if not orders %}
+    <div class="empty-state-card">
+        <div class="empty-icon">📑</div>
+        <h2>No Orders Created Yet</h2>
+        <p>Create your first packaging order to calculate the optimal box recommendation.</p>
+        <a href="{% url 'order_create' %}" class="btn btn-primary mt-3">+ Create First Order</a>
+    </div>
+{% else %}
+    <div class="card">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Order Number</th>
+                        <th>Created Date</th>
+                        <th>Total Items</th>
+                        <th>Products</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ord in orders %}
+                        <tr>
+                            <td><strong>#{{ ord.order_number }}</strong></td>
+                            <td>{{ ord.created_at|date:"M d, Y H:i" }}</td>
+                            <td><span class="badge badge-qty">{{ ord.items.count }} product type(s)</span></td>
+                            <td class="text-muted">
+                                {% for it in ord.items.all|slice:":3" %}
+                                    {{ it.quantity }}x {{ it.product.name }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                                {% if ord.items.count > 3 %}...{% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'order_recommendation' ord.id %}" class="btn btn-secondary btn-sm">
+                                    View Recommendation &rarr;
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
+
